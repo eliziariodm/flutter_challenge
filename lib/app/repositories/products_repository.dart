@@ -7,14 +7,12 @@ class ProductsRepository {
   ProductsRepository({required this.firestore});
 
   Future<List<ProductsModel>> getProducts() {
-    return firestore
-        .collection("products")
-        .orderBy("created")
-        .get()
-        .then((value) => value.docs.map(
-              (doc) {
-                return ProductsModel.fromJson(doc);
-              },
-            ).toList());
+    return firestore.collection("products").orderBy("created").get().then(
+          (value) => value.docs.map(
+            (doc) {
+              return ProductsModel.fromJson(doc);
+            },
+          ).toList(),
+        );
   }
 }
