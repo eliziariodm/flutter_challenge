@@ -1,131 +1,171 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:transparent_image/transparent_image.dart';
+import 'package:flutter_challenge/app/components/edit_component.dart';
+import 'package:flutter_challenge/app/controllers/products_controller.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
-class ProductsComponent extends StatefulWidget {
+class ProductsComponent extends StatelessWidget {
   const ProductsComponent({Key? key}) : super(key: key);
 
   @override
-  _ProductsComponentState createState() => _ProductsComponentState();
-}
-
-class _ProductsComponentState extends State<ProductsComponent> {
-  @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: 5,
-      itemBuilder: (context, index) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.18,
-          margin: const EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(7),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: MediaQuery.of(context).size.width * 0.09,
-                alignment: Alignment.center,
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: FadeInImage.memoryNetwork(
-                  placeholder: kTransparentImage,
-                  image: 'https://picsum.photos/250?image=9',
+    return LayoutBuilder(
+      builder: (context, constraints) => GetBuilder<ProductsController>(
+        init: ProductsController(),
+        builder: (productsController) {
+          if (productsController.isLoading) {
+            return const Center(
+              child: CircularProgressIndicator(
+                backgroundColor: Colors.black,
+              ),
+            );
+          } else if (productsController.products.isEmpty) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(8),
+                child: Text(
+                  'Não há nenhum produto para visualizar',
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.only(left: 10, top: 7),
-                    width: MediaQuery.of(context).size.width * 0.837,
-                    height: MediaQuery.of(context).size.height * 0.06,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          '2',
-                          style: TextStyle(fontSize: 14),
-                        ),
-                        PopupMenuButton(
-                          iconSize: 30,
-                          icon: const Icon(Icons.more_horiz),
-                          itemBuilder: (context) => const [
-                            PopupMenuItem(
-                              child: Text(
-                                'Editar',
-                                style: TextStyle(color: Colors.blue),
-                              ),
-                            ),
-                            PopupMenuItem(
-                              child: Text(
-                                'Excluir',
-                                style: TextStyle(color: Colors.blue),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+            );
+          } else {
+            return ListView.builder(
+              itemCount: productsController.products.length,
+              itemBuilder: (context, index) {
+                return Container(
+                  height: MediaQuery.of(context).size.height * 0.21,
+                  margin: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                    borderRadius: BorderRadius.circular(7),
                   ),
-                  Container(
-                    padding: const EdgeInsets.only(top: 20),
-                    width: MediaQuery.of(context).size.width * 0.837,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.only(right: 20, bottom: 5),
-                          child: const Text(
-                            'Nota',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.only(right: 20, bottom: 5),
-                          child: const Text(
-                            'Preço',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.837,
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          const Text(
-                            '4',
-                            style: TextStyle(
-                                fontSize: 24, fontWeight: FontWeight.bold),
+                      SizedBox(
+                        height: constraints.maxHeight,
+                        width: constraints.maxWidth * 0.24,
+                        child: ClipRRect(
+                          clipBehavior: Clip.antiAlias,
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(8),
+                            topLeft: Radius.circular(8),
                           ),
-                          Icon(
-                            Icons.star,
-                            color: Colors.yellow[600],
-                          )
+                          child: CachedNetworkImage(
+                            key: UniqueKey(),
+                            imageUrl:
+                                productsController.products[index].filename ??
+                                    '',
+                            height: productsController.products[index].height,
+                            width: productsController.products[index].width,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: Colors.black26,
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              color: Colors.black26,
+                              child: const Icon(
+                                Icons.error,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.only(left: 10),
+                            width: constraints.maxWidth * 0.7,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    productsController.products[index].title ??
+                                        '',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 18),
+                                  ),
+                                ),
+                                EditComponent(
+                                  indexEdit: index,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.only(left: 12),
+                            width: constraints.maxWidth * 0.7,
+                            child: Text(
+                              productsController.products[index].type ?? '',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 10),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.only(left: 10),
+                            width: constraints.maxWidth * 0.72,
+                            child: Text(
+                              productsController.products[index].description ??
+                                  '',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Container(
+                                width: constraints.maxWidth * 0.45,
+                                padding: const EdgeInsets.only(left: 10),
+                                child: Row(
+                                  children: List.generate(
+                                    5,
+                                    (indicator) => indicator <
+                                            productsController
+                                                .products[index].rating!
+                                        ? Icon(
+                                            Icons.star,
+                                            color: Colors.yellow[600],
+                                          )
+                                        : Icon(
+                                            Icons.star_border,
+                                            color: Colors.yellow[600],
+                                          ),
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                'R\$ ${productsController.products[index].price}',
+                                style: const TextStyle(
+                                    fontSize: 22, fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 10),
+                            child: Text(
+                              DateFormat('dd/MM/yyyy HH:mm').format(
+                                  productsController.products[index].created!
+                                      .toDate()),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ],
-                      ),
-                      const Text(
-                        '6',
-                        style: TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold),
-                      ),
+                      )
                     ],
                   ),
-                ],
-              )
-            ],
-          ),
-        );
-      },
+                );
+              },
+            );
+          }
+        },
+      ),
     );
   }
 }
